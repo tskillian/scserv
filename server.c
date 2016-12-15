@@ -123,8 +123,37 @@ int main(void)
             if (status == 0) printf("Other connection closed");
             if (status == -1) perror("recv");
             printf("%s", str);
-            if (send(new_fd, "Hello, world!", 13, 0) == -1)
-                perror("send");
+            
+	    FILE* home_pg = fopen("index.html", "r");
+	    if(fseek(home_pg, 0L, SEEK_END) == -1) {
+	    	perror("file seek failed");
+		return 1;
+	    }
+
+	    int size = ftell(home_pg);
+	    if (size < 0) {
+	    	perror("negative file size");
+		return 1;
+	    }
+
+	    rewind(home_pg);
+	    char* buffer = (char*)calloc(size, sizeof(char));
+	    if (buffer == NULL){
+	    	perror("failed to allocate memory");
+	    	return 1;
+            }
+
+            fread(buffer, sizeof(char), size, home_pg);
+	    if (ferror(home_pg) != 0){
+	    	perror("error reading html page");
+		return 1;
+	    }
+
+	    fclose(home_pg);
+
+	    if (send(new_fd, buffer, size, 0) == -1)
+	    	perror("send");
+
             close(new_fd);
             exit(0);
         }
