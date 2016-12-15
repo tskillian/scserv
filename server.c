@@ -127,26 +127,26 @@ int main(void)
 	    FILE* home_pg = fopen("index.html", "r");
 	    if(fseek(home_pg, 0L, SEEK_END) == -1) {
 	    	perror("file seek failed");
-		return 1;
+		exit(1);
 	    }
 
 	    int size = ftell(home_pg);
 	    if (size < 0) {
 	    	perror("negative file size");
-		return 1;
+		exit(1);
 	    }
 
 	    rewind(home_pg);
 	    char* buffer = (char*)calloc(size, sizeof(char));
 	    if (buffer == NULL){
 	    	perror("failed to allocate memory");
-	    	return 1;
+	    	exit(1);
             }
 
             fread(buffer, sizeof(char), size, home_pg);
 	    if (ferror(home_pg) != 0){
 	    	perror("error reading html page");
-		return 1;
+		exit(1);
 	    }
 
 	    fclose(home_pg);
