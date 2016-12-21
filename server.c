@@ -15,6 +15,21 @@
 
 #define BACKLOG 10     // how many pending connections queue will hold
 
+char** parse_req(char* req)
+{
+    // GET requests have at most 3 pieces of data it would seem
+    static char* parsed_req[3];
+    char delim[2] = " ";
+
+    parsed_req[0] = strtok(req, delim);
+
+    int i;
+    for (i = 1; i < 3; i++)
+    	parsed_req[i] = strtok(NULL, delim);
+
+    return parsed_req;
+}
+
 void sigchld_handler(int s)
 {
     // waitpid() might overwrite errno, so we save and restore it:
@@ -113,16 +128,23 @@ int main(void)
         inet_ntop(their_addr.ss_family,
             get_in_addr((struct sockaddr *)&their_addr),
             s, sizeof s);
-        printf("server: got connection from %s\n", s);
+        //printf("server: got connection from %s\n", s);
 
         if (!fork()) { // this is the child process
             close(sockfd); // child doesn't need the listener
-            printf("sending response\n");
+            //printf("sending response\n");
             char str[10000];
             int status = recv(new_fd, &str, 10000, 0);
             if (status == 0) printf("Other connection closed");
             if (status == -1) perror("recv");
-            printf("%s", str);
+            //printf("%s", str);
+
+	    //printf("\n\n\n");
+	    char** req = parse_req(str);
+	    
+	    int i;
+	    for (i = 0; i < 3; i++)
+	    	printf("%s\n", req[i]);
             
 	    FILE* home_pg = fopen("index.html", "r");
 	    if(fseek(home_pg, 0L, SEEK_END) == -1) {
