@@ -15,19 +15,23 @@
 
 #define BACKLOG 10     // how many pending connections queue will hold
 
-char** parse_req(char* req)
+// this really only parses GET requests at the moment, although it could be
+// repurposed as a general request parser if that was what we wanted
+char* parse_req(char* req)
 {
-    // GET requests have at most 3 pieces of data it would seem
-    static char* parsed_req[3];
+    static char* path = NULL;
+
+    char* parsed_req;
     char delim[2] = " ";
 
-    parsed_req[0] = strtok(req, delim);
+    strtok(req, delim);
+    parsed_req = strtok(NULL, delim);
 
-    int i;
-    for (i = 1; i < 3; i++)
-        parsed_req[i] = strtok(NULL, delim);
+    path = (char*)calloc(strlen(parsed_req) + 1, sizeof(char));
+    path[0] = '.';
+    strcat(path, parsed_req);
 
-    return parsed_req;
+    return path;
 }
 
 void sigchld_handler(int s)
@@ -128,57 +132,61 @@ int main(void)
         inet_ntop(their_addr.ss_family,
             get_in_addr((struct sockaddr *)&their_addr),
             s, sizeof s);
-        //printf("server: got connection from %s\n", s);
+        printf("server: got connection from %s\n", s);
 
         if (!fork()) { // this is the child process
             close(sockfd); // child doesn't need the listener
-            //printf("sending response\n");
+
+            printf("sending response\n");
+
             char str[10000];
             int status = recv(new_fd, &str, 10000, 0);
-            if (status == 0) printf("Other connection closed");
-            if (status == -1) perror("recv");
-            //printf("%s", str);
+            if (status == 0)
+                printf("Other connection closed");
 
-        //printf("\n\n\n");
-        char** req = parse_req(str);
-        
-        int i;
-        for (i = 0; i < 3; i++)
-           printf("%s\n", req[i]);
-            
-        FILE* home_pg = fopen("index.html", "r");
-        if(fseek(home_pg, 0L, SEEK_END) == -1) {
-            perror("file seek failed");
-            exit(1);
-        }
+            if (status == -1)
+                perror("recv");
 
-        int size = ftell(home_pg);
-        if (size < 0) {
-            perror("negative file size");
-            exit(1);
-        }
+            printf("%s", str);
 
-        rewind(home_pg);
-        char* buffer = (char*)calloc(size, sizeof(char));
-        if (buffer == NULL){
-            perror("failed to allocate memory");
-            exit(1);
-        }
+            FILE* resrc = fopen(parse_req(str), "r");
 
-        fread(buffer, sizeof(char), size, home_pg);
-        if (ferror(home_pg) != 0){
-            perror("error reading html page");
-            exit(1);
-        }
+            if (resrc == NULL)
+                perror("this shit can not be opened");
 
-        fclose(home_pg);
+            if (fseek(resrc, 0L, SEEK_END) == -1) {
+                perror("file seek failed");
+                exit(1);
+            }
 
-        if (send(new_fd, buffer, size, 0) == -1)
-            perror("send");
+            int size = ftell(resrc);
+            if (size < 0) {
+                perror("negative file size");
+                exit(1);
+            }
+
+            rewind(resrc);
+            char* buffer = (char*)calloc(size, sizeof(char));
+            if (buffer == NULL){
+                perror("failed to allocate memory");
+                exit(1);
+            }
+
+            fread(buffer, sizeof(char), size, resrc);
+            if (ferror(resrc) != 0){
+                perror("error reading html page");
+                exit(1);
+            }
+
+            fclose(resrc);
+
+            if (send(new_fd, buffer, size, 0) == -1)
+                perror("failed to send the requested file");
 
             close(new_fd);
             exit(0);
         }
+        
         close(new_fd);  // parent doesn't need this
     }
 
