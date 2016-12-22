@@ -25,7 +25,7 @@ char** parse_req(char* req)
 
     int i;
     for (i = 1; i < 3; i++)
-    	parsed_req[i] = strtok(NULL, delim);
+        parsed_req[i] = strtok(NULL, delim);
 
     return parsed_req;
 }
@@ -139,42 +139,42 @@ int main(void)
             if (status == -1) perror("recv");
             //printf("%s", str);
 
-	    //printf("\n\n\n");
-	    char** req = parse_req(str);
-	    
-	    int i;
-	    for (i = 0; i < 3; i++)
-	    	printf("%s\n", req[i]);
+        //printf("\n\n\n");
+        char** req = parse_req(str);
+        
+        int i;
+        for (i = 0; i < 3; i++)
+           printf("%s\n", req[i]);
             
-	    FILE* home_pg = fopen("index.html", "r");
-	    if(fseek(home_pg, 0L, SEEK_END) == -1) {
-	    	perror("file seek failed");
-		exit(1);
-	    }
+        FILE* home_pg = fopen("index.html", "r");
+        if(fseek(home_pg, 0L, SEEK_END) == -1) {
+            perror("file seek failed");
+            exit(1);
+        }
 
-	    int size = ftell(home_pg);
-	    if (size < 0) {
-	    	perror("negative file size");
-		exit(1);
-	    }
+        int size = ftell(home_pg);
+        if (size < 0) {
+            perror("negative file size");
+            exit(1);
+        }
 
-	    rewind(home_pg);
-	    char* buffer = (char*)calloc(size, sizeof(char));
-	    if (buffer == NULL){
-	    	perror("failed to allocate memory");
-	    	exit(1);
-            }
+        rewind(home_pg);
+        char* buffer = (char*)calloc(size, sizeof(char));
+        if (buffer == NULL){
+            perror("failed to allocate memory");
+            exit(1);
+        }
 
-            fread(buffer, sizeof(char), size, home_pg);
-	    if (ferror(home_pg) != 0){
-	    	perror("error reading html page");
-		exit(1);
-	    }
+        fread(buffer, sizeof(char), size, home_pg);
+        if (ferror(home_pg) != 0){
+            perror("error reading html page");
+            exit(1);
+        }
 
-	    fclose(home_pg);
+        fclose(home_pg);
 
-	    if (send(new_fd, buffer, size, 0) == -1)
-	    	perror("send");
+        if (send(new_fd, buffer, size, 0) == -1)
+            perror("send");
 
             close(new_fd);
             exit(0);
