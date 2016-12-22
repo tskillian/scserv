@@ -20,12 +20,9 @@
 char* parse_req(char* req)
 {
     static char* path = NULL;
-
-    char* parsed_req;
-    char delim[2] = " ";
-
-    strtok(req, delim);
-    parsed_req = strtok(NULL, delim);
+    
+    strtok(req, " ");
+    char* parsed_req = strtok(NULL, " ");
 
     path = (char*)calloc(strlen(parsed_req) + 1, sizeof(char));
     path[0] = '.';
